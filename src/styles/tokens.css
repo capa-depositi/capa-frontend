@@ -1,0 +1,13 @@
+/* Application design tokens for AI-friendly UI */
+:root {
+  --app-radius: 0.75rem;
+  --app-spacing: 1rem;
+  --app-content-width: 1200px;
+  --app-card-padding: 1rem; /* used by AppCard via --card-spacing */
+  --app-control-height: 2.5rem;
+}
+
+/* compact density overrides */
+.density-compact {
+  --app-card-padding: 0.5rem;
+}
