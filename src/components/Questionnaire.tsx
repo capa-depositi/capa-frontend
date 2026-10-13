@@ -247,8 +247,7 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
       const nextIndex = getNextValidQuestionIndex(currentQuestionIndex + 1, updatedAnswers);
 
       if (nextIndex >= questions.length) {
-        // Questionario completato
-        onQuestionnaireCompleted(answers);
+        onQuestionnaireCompleted(updatedAnswers);
       } else {
         setCurrentQuestionIndex(nextIndex);
       }
@@ -261,8 +260,7 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
       setAnswers(updatedAnswers);
       const nextIndex = getNextValidQuestionIndex(currentQuestionIndex + 1, updatedAnswers);
       if (nextIndex >= questions.length) {
-        onQuestionnaireCompleted();
-      } else {
+        onQuestionnaireCompleted(updatedAnswers);
         setCurrentQuestionIndex(nextIndex);
       }
       console.debug('Error saving answer to server, progressing locally', err);
