@@ -85,7 +85,22 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
           throw new Error((data && data.error) ? data.error : 'Errore nel caricamento delle domande');
         }
 
-        setQuestions(Array.isArray(data) ? data : []);
+        // L'API restituisce colonne snake_case e options come stringa separata da virgole
+        const normalized = (Array.isArray(data) ? data : []).map((q: any) => ({
+          id: q.id,
+          text: q.text ?? q.question_text,
+          type: q.type ?? q.question_type,
+          image: q.image,
+          options: Array.isArray(q.options)
+            ? q.options
+            : typeof q.options === 'string' && q.options
+              ? q.options.split(/,(?!\s)/).map((o: string) => o.trim())
+              : undefined,
+          required: !!q.required,
+          dependsOn: q.dependsOn ?? q.depends_on ?? undefined,
+          dependsValue: q.dependsValue ?? q.depends_value ?? undefined,
+        }));
+        setQuestions(normalized);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Errore sconosciuto');
       } finally {
