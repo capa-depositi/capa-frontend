@@ -492,10 +492,10 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
         {!showTicket && (
           <>
             <Button
-              variant="outline"
+              variant="ghost"
               onClick={handlePrevious}
               disabled={currentQuestionIndex === 0}
-              className="rounded-full"
+              className="rounded-full text-slate-600"
             >
               <ChevronLeft size={16} className="mr-1" />
               Precedente
@@ -504,7 +504,7 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
             <Button
               onClick={handleNext}
               disabled={!canProceed || isAdvancing}
-              className="rounded-full"
+              className="h-10 rounded-full px-6 text-base shadow-md"
             >
               {isAdvancing ? 'Salvataggio...' : willCompleteOnNext ? 'Completa Questionario' : 'Avanti'}
               <ArrowRight size={16} className="ml-2" />
