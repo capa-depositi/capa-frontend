@@ -61,6 +61,7 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
   const [showTicket, setShowTicket] = useState(true);
   const [ticketError, setTicketError] = useState<string | null>(null);
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+  const [isAdvancing, setIsAdvancing] = useState(false);
   const ticketForm = useForm<TicketFormValues>({
     resolver: zodResolver(ticketSchema),
     defaultValues: { nome: '', cognome: '', email: '', eta: '' },
@@ -219,8 +220,9 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
 
   // Salva la risposta corrente e passa alla prossima domanda
   const handleNext = async () => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || isAdvancing) return;
 
+    setIsAdvancing(true);
     try {
       if (submissionId) {
         const response = await fetch('/api/answers', {
@@ -260,6 +262,8 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore durante il salvataggio');
+    } finally {
+      setIsAdvancing(false);
     }
   };
 
@@ -499,10 +503,10 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
 
             <Button
               onClick={handleNext}
-              disabled={!canProceed}
+              disabled={!canProceed || isAdvancing}
               className="rounded-full"
             >
-              {willCompleteOnNext ? 'Completa Questionario' : 'Avanti'}
+              {isAdvancing ? 'Salvataggio...' : willCompleteOnNext ? 'Completa Questionario' : 'Avanti'}
               <ArrowRight size={16} className="ml-2" />
             </Button>
           </>
