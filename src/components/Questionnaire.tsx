@@ -36,7 +36,7 @@ interface Question {
 }
 
 interface QuestionnaireProps {
-  onSubmitProfile?: (data: { nome: string; cognome: string; email: string; eta: number }) => Promise<string>;
+  onSubmitProfile?: (data: { nome: string; cognome: string; email: string; eta: number }) => Promise<void>;
 }
 
 export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile }) => {
@@ -52,13 +52,15 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
     setIsLoading,
     setError,
     onQuestionnaireCompleted,
-    profileId
+    submissionId
   } = useQuestionnaire();
 
   const { setAppState } = useAppContext();
 
   const [currentAnswer, setCurrentAnswer] = useState('');
   const [showTicket, setShowTicket] = useState(true);
+  const [ticketError, setTicketError] = useState<string | null>(null);
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
   const ticketForm = useForm<TicketFormValues>({
     resolver: zodResolver(ticketSchema),
     defaultValues: { nome: '', cognome: '', email: '', eta: '' },
@@ -111,13 +113,13 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
     loadQuestions();
   }, [setQuestions, setIsLoading, setError]);
 
-  // Carica le risposte precedenti se il profilo esiste
+  // Carica le risposte precedenti solo per la submission attiva.
   useEffect(() => {
     const loadExistingAnswers = async () => {
-      if (!profileId) return;
+      if (!submissionId) return;
 
       try {
-        const response = await fetch(`/api/answers/${profileId}`);
+        const response = await fetch(`/api/answers/${submissionId}`);
 
         if (!response.ok) {
           // Se la risposta non è ok (404, 500, etc), ignora
@@ -149,7 +151,7 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
     };
 
     loadExistingAnswers();
-  }, [profileId, setAnswers]);
+  }, [submissionId, setAnswers]);
 
   // Aggiorna la risposta corrente quando cambia la domanda
   useEffect(() => {
@@ -220,19 +222,24 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
     if (!currentQuestion) return;
 
     try {
-      // Attempt to save to server only if we have a profileId
-      if (profileId) {
-        await fetch('/api/answers', {
+      if (submissionId) {
+        const response = await fetch('/api/answers', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            profileId,
+            submissionId,
             questionId: currentQuestion.id,
             value: currentAnswer
           }),
         });
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Errore durante il salvataggio della risposta');
+        }
+      } else {
+        throw new Error('Submission non disponibile');
       }
 
       const updatedAnswers = {
@@ -247,23 +254,12 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
       const nextIndex = getNextValidQuestionIndex(currentQuestionIndex + 1, updatedAnswers);
 
       if (nextIndex >= questions.length) {
-        onQuestionnaireCompleted(updatedAnswers);
+        await onQuestionnaireCompleted(updatedAnswers);
       } else {
         setCurrentQuestionIndex(nextIndex);
       }
     } catch (err) {
-      // If server save fails, still progress locally
-      const updatedAnswers = {
-        ...answers,
-        [currentQuestion.id]: currentAnswer
-      };
-      setAnswers(updatedAnswers);
-      const nextIndex = getNextValidQuestionIndex(currentQuestionIndex + 1, updatedAnswers);
-      if (nextIndex >= questions.length) {
-        onQuestionnaireCompleted(updatedAnswers);
-        setCurrentQuestionIndex(nextIndex);
-      }
-      console.debug('Error saving answer to server, progressing locally', err);
+      setError(err instanceof Error ? err.message : 'Errore durante il salvataggio');
     }
   };
 
@@ -312,33 +308,42 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
   }
 
   const onSubmitTicket = async (data: TicketFormValues) => {
-    // Save ticket data into answers map under reserved keys (local only; do NOT create profile)
-    const ticketAnswers = {
-      ...answers,
-      ticket_nome: data.nome,
-      ticket_cognome: data.cognome,
-      ticket_email: data.email,
-      ticket_eta: data.eta || ''
-    };
-    setAnswers(ticketAnswers);
+    setIsSubmittingTicket(true);
+    setTicketError(null);
+    try {
+      await onSubmitProfile?.({
+        nome: data.nome,
+        cognome: data.cognome,
+        email: data.email,
+        eta: Number(data.eta || 0)
+      });
 
-    // Ensure app shell shows the questionnaire
-    try { setAppState && setAppState('questionnaire'); } catch (_) {}
-    try { window.history.pushState({ appState: 'questionnaire' }, '', `?step=questionnaire`); } catch(_) {}
+      const ticketAnswers = {
+        ...answers,
+        ticket_nome: data.nome,
+        ticket_cognome: data.cognome,
+        ticket_email: data.email,
+        ticket_eta: data.eta || ''
+      };
+      setAnswers(ticketAnswers);
+      setError(null);
 
-    // Determine the first valid question index (taking ticketAnswers into account)
-    const firstIndex = getNextValidQuestionIndex(0, ticketAnswers);
+      setAppState('questionnaire');
+      window.history.pushState({ appState: 'questionnaire' }, '', '?step=questionnaire');
 
+      const firstIndex = getNextValidQuestionIndex(0, ticketAnswers);
       if (firstIndex >= questions.length) {
-      // No visible questions — complete immediately
-      setShowTicket(false);
-      onQuestionnaireCompleted(answers);
-    } else {
-      // Start from the first visible question
-      setCurrentQuestionIndex(firstIndex);
-      setShowTicket(false);
+        setShowTicket(false);
+        await onQuestionnaireCompleted(ticketAnswers);
+      } else {
+        setCurrentQuestionIndex(firstIndex);
+        setShowTicket(false);
+      }
+    } catch (err) {
+      setTicketError(err instanceof Error ? err.message : 'Errore durante la creazione del questionario');
+    } finally {
+      setIsSubmittingTicket(false);
     }
-    // NOTE: do not send any profile creation request here — this is not a login
   };
 
   return (
@@ -354,6 +359,7 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
               />
               <form onSubmit={ticketForm.handleSubmit(onSubmitTicket)}>
                 <CardContent>
+                  {ticketError && <p className="mb-4 text-sm text-red-700">{ticketError}</p>}
                   <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <Controller
                       name="nome"
@@ -404,10 +410,11 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
                 <CardFooter className="justify-center border-t-0 bg-transparent pt-2">
                   <button
                     type="submit"
+                    disabled={isSubmittingTicket}
                     className="uppercase tracking-widest font-semibold text-white"
                     style={{ backgroundColor: '#b92b22', padding: '12px 28px', borderRadius: 6, boxShadow: '0 4px 0 rgba(0,0,0,0.12)' }}
                   >
-                    Entra nel circo →
+                    {isSubmittingTicket ? 'Creazione in corso...' : 'Entra nel circo →'}
                   </button>
                 </CardFooter>
               </form>

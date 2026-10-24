@@ -11,122 +11,108 @@ type AppState = 'intro' | 'profile' | 'questionnaire' | 'results';
 function App() {
   const [appState, setAppState] = useState<AppState>('intro');
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [questionnaireKey, setQuestionnaireKey] = useState(0);
   const [userRole, setUserRole] = useState<'affittuario' | null>(null);
   const [showProfileForm, setShowProfileForm] = useState<boolean>(false);
   const [defaultAuthMode, setDefaultAuthMode] = useState<'signup' | 'signin'>('signup');
 
-  const handleProfileCreated = (id: string, questionnaireCompleted: boolean = false) => {
+  const createSubmission = async (id: string) => {
+    const response = await fetch('/api/submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileId: id })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Errore durante la creazione del questionario');
+    return data.submissionId as string;
+  };
+
+  const handleProfileCreated = async (id: string) => {
     setProfileId(id);
+    setSubmissionId(null);
+    setQuestionnaireKey(current => current + 1);
     setUserRole('affittuario');
-    setAppState(questionnaireCompleted ? 'results' : 'questionnaire');
+    setAppState('questionnaire');
   };
 
   const handleSubmitProfileFromTicket = async (data: { nome: string; cognome: string; email: string; eta: number }) => {
-    // create profile via API and proceed. Returns profileId on success or throws on error.
-      const resp = await fetch('/api/profiles', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ nome: data.nome, cognome: data.cognome, eta: data.eta, email: data.email, ruolo: 'affittuario' }) });
+    const response = await fetch('/api/profiles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, eta: data.eta || undefined, ruolo: 'affittuario' })
+    });
+    const profile = await response.json();
+    if (!response.ok) throw new Error(profile.error || 'Errore durante la creazione del profilo');
 
-    const j = await resp.json().catch(() => ({}));
-
-    if (!resp.ok) {
-      // expose error to caller so UI can show it
-      const message = j && j.error ? j.error : 'Errore durante la creazione del profilo';
-      // fall back to showing the full profile form
-      setShowProfileForm(true);
-      throw new Error(message);
-    }
-
-    handleProfileCreated(j.profileId, j.questionnaireCompleted || false);
-    return j.profileId;
+    const newSubmissionId = await createSubmission(profile.profileId);
+    setProfileId(profile.profileId);
+    setSubmissionId(newSubmissionId);
+    setUserRole('affittuario');
   };
-  
 
   const handleQuestionnaireCompleted = async (answers?: Record<string, string>) => {
-    try {
-      // If we already have a profileId, just go to results
-      if (profileId) {
-        setAppState('results');
-        return;
-      }
-
+    let activeSubmissionId = submissionId;
+    if (!profileId || !activeSubmissionId) {
       const email = answers?.ticket_email;
-      let pid: string | null = null;
+      const response = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: answers?.ticket_nome || '',
+          cognome: answers?.ticket_cognome || '',
+          eta: answers?.ticket_eta ? Number(answers.ticket_eta) : undefined,
+          email: email || '',
+          ruolo: 'affittuario'
+        })
+      });
+      const profile = await response.json();
+      if (!response.ok) throw new Error(profile.error || 'Errore durante la creazione del profilo');
 
-      // Try login (find existing profile) by email
-      if (email) {
-        try {
-          const loginResp = await fetch('/api/profiles/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-          });
-          if (loginResp.ok) {
-            const j = await loginResp.json();
-            pid = j.profileId || null;
-          }
-        } catch (err) {
-          console.debug('Login check failed', err);
-        }
+      setProfileId(profile.profileId);
+      setUserRole('affittuario');
+      activeSubmissionId = await createSubmission(profile.profileId);
+      setSubmissionId(activeSubmissionId);
+
+      for (const [questionId, value] of Object.entries(answers || {})) {
+        if (questionId.startsWith('ticket_')) continue;
+        const answerResponse = await fetch('/api/answers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ submissionId: activeSubmissionId, questionId, value })
+        });
+        if (!answerResponse.ok) throw new Error(`Errore durante il salvataggio della risposta ${questionId}`);
       }
-
-      // If not found, create a new profile from ticket answers
-      if (!pid) {
-        try {
-          const created = await fetch('/api/profiles', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              nome: answers?.ticket_nome || '',
-              cognome: answers?.ticket_cognome || '',
-              eta: answers?.ticket_eta ? Number(answers.ticket_eta) : undefined,
-              email: email || '',
-              ruolo: 'affittuario'
-            })
-          });
-          if (created.ok) {
-            const j = await created.json();
-            pid = j.profileId || null;
-          }
-        } catch (err) {
-          console.debug('Profile creation failed', err);
-        }
-      }
-      if (pid) {
-        setProfileId(pid);
-        setUserRole('affittuario');
-
-        // Persist all collected answers to the server
-        if (answers) {
-          for (const [questionId, value] of Object.entries(answers)) {
-            try {
-              await fetch('/api/answers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ profileId: pid, questionId, value })
-              });
-            } catch (err) {
-              console.debug('Failed to persist answer', questionId, err);
-            }
-          }
-        }
-      }
-
-      // Always land on the Risultato step once the questionnaire is completed.
-      // If no profile could be resolved, Results shows a "nothing to show" message instead.
-      setAppState('results');
-    } catch (err) {
-      console.error('Error finishing questionnaire', err);
-      setAppState('results');
     }
+
+    if (!activeSubmissionId) throw new Error('Submission non disponibile');
+    const completionResponse = await fetch(`/api/submissions/${activeSubmissionId}/complete`, { method: 'POST' });
+    const completion = await completionResponse.json();
+    if (!completionResponse.ok) throw new Error(completion.error || 'Errore durante il completamento');
+    setAppState('results');
   };
 
   const handleRestart = () => {
     setAppState('intro');
     setProfileId(null);
+    setSubmissionId(null);
     setUserRole(null);
+    window.history.replaceState({ appState: 'intro' }, '', '?step=intro');
   };
 
-  const handleRestartQuestionnaire = () => {
+  const handleRestartQuestionnaire = async () => {
+    setSubmissionId(null);
+    setQuestionnaireKey(current => current + 1);
+    window.history.replaceState({ appState: 'questionnaire' }, '', '?step=questionnaire');
     setAppState('questionnaire');
+  };
+
+  const handleStartQuestionnaire = () => {
+    setSubmissionId(null);
+    setQuestionnaireKey(current => current + 1);
+    window.history.replaceState({ appState: 'questionnaire' }, '', '?step=questionnaire');
+    setAppState('questionnaire');
+    setShowProfileForm(false);
   };
 
   const shellStep: 1 | 2 | 3 =
@@ -171,7 +157,10 @@ function App() {
 
   // Push a new history entry whenever appState changes due to navigation
   useEffect(() => {
-    window.history.pushState({ appState }, '', `?step=${appState}`);
+    const token = appState === 'results' ? new URLSearchParams(window.location.search).get('token') : null;
+    const query = new URLSearchParams({ step: appState });
+    if (token) query.set('token', token);
+    window.history.pushState({ appState }, '', `?${query.toString()}`);
   }, [appState]);
 
 
@@ -179,7 +168,9 @@ function App() {
   return (
     <AppProvider state={appState} setState={setAppState} initialState={appState}>
       <QuestionnaireProvider
+      key={questionnaireKey}
       profileId={profileId}
+      submissionId={submissionId}
       userRole={userRole}
       onQuestionnaireCompleted={handleQuestionnaireCompleted}
       onRestart={handleRestart}
@@ -187,7 +178,7 @@ function App() {
     >
       <WorkflowShell
         currentStep={shellStep}
-        onStart={appState === 'intro' ? () => { setAppState('questionnaire'); setShowProfileForm(false); } : undefined}
+        onStart={appState === 'intro' ? handleStartQuestionnaire : undefined}
         onStepChange={(n) => {
           // map tab number to app state
           if (n === 1) setAppState('intro');
@@ -201,7 +192,7 @@ function App() {
         {appState === 'intro' && null}
         {appState === 'profile' && !showProfileForm && null}
         {appState === 'profile' && showProfileForm && <ProfileForm onProfileCreated={handleProfileCreated} defaultMode={defaultAuthMode} />}
-        {appState === 'questionnaire' && <Questionnaire />}
+        {appState === 'questionnaire' && <Questionnaire onSubmitProfile={handleSubmitProfileFromTicket} />}
         {appState === 'results' && <Results />}
       </WorkflowShell>
       </QuestionnaireProvider>

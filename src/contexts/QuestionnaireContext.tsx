@@ -12,6 +12,7 @@ interface Question {
 
 interface QuestionnaireContextType {
   profileId: string | null;
+  submissionId: string | null;
   userRole: 'affittuario' | null;
   answers: Record<string, string>;
   currentQuestionIndex: number;
@@ -23,24 +24,26 @@ interface QuestionnaireContextType {
   setQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  onQuestionnaireCompleted: (answers?: Record<string, string>) => void;
+  onQuestionnaireCompleted: (answers?: Record<string, string>) => Promise<void>;
   resetQuestionnaire: () => void;
-  restartQuestionnaire: () => void;
+  restartQuestionnaire: () => Promise<void>;
 }
 
 const QuestionnaireContext = createContext<QuestionnaireContextType | undefined>(undefined);
 
 interface QuestionnaireProviderProps {
   profileId: string | null;
+  submissionId: string | null;
   userRole: 'affittuario' | null;
-  onQuestionnaireCompleted: (answers?: Record<string, string>) => void;
+  onQuestionnaireCompleted: (answers?: Record<string, string>) => Promise<void>;
   onRestart: () => void;
-  onRestartQuestionnaire?: () => void;
+  onRestartQuestionnaire?: () => Promise<void>;
   children: ReactNode;
 }
 
 export const QuestionnaireProvider: React.FC<QuestionnaireProviderProps> = ({
   profileId,
+  submissionId,
   userRole,
   onQuestionnaireCompleted,
   onRestart,
@@ -62,19 +65,20 @@ export const QuestionnaireProvider: React.FC<QuestionnaireProviderProps> = ({
     onRestart();
   };
 
-  const restartQuestionnaire = () => {
+  const restartQuestionnaire = async () => {
     setAnswers({});
     setCurrentQuestionIndex(0);
     setQuestions([]);
     setIsLoading(false);
     setError(null);
     if (onRestartQuestionnaire) {
-      onRestartQuestionnaire();
+      await onRestartQuestionnaire();
     }
   };
 
   const value: QuestionnaireContextType = {
     profileId,
+    submissionId,
     userRole,
     answers,
     currentQuestionIndex,

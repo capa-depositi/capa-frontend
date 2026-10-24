@@ -4,6 +4,9 @@ import { useQuestionnaire } from '../contexts/QuestionnaireContext';
 import { Button } from '@/components/ui/button';
 
 interface CalculationResult {
+  submissionId: string;
+  submissionStatus: 'in_progress' | 'completed';
+  emailStatus: 'not_sent' | 'sending' | 'sent' | 'failed';
   deposit: number;
   interest: number;
   years: number;
@@ -14,13 +17,14 @@ interface CalculationResult {
 }
 
 export const Results: React.FC = () => {
-  const { profileId, isLoading, setIsLoading, setError, error, resetQuestionnaire, restartQuestionnaire } = useQuestionnaire();
+  const { submissionId, isLoading, setIsLoading, setError, error, resetQuestionnaire, restartQuestionnaire } = useQuestionnaire();
   const [result, setResult] = useState<CalculationResult | null>(null);
+  const [isRetryingEmail, setIsRetryingEmail] = useState(false);
   const resultToken = new URLSearchParams(window.location.search).get('token');
 
   useEffect(() => {
     const calculateInterest = async () => {
-      if (!profileId && !resultToken) return;
+      if (!submissionId && !resultToken) return;
 
       setIsLoading(true);
       try {
@@ -31,7 +35,7 @@ export const Results: React.FC = () => {
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ profileId }),
+              body: JSON.stringify({ submissionId }),
             });
 
         // Read raw text first to guard against empty or invalid JSON responses
@@ -72,14 +76,29 @@ export const Results: React.FC = () => {
     };
 
     calculateInterest();
-  }, [profileId, resultToken, setIsLoading, setError]);
+  }, [submissionId, resultToken, setIsLoading, setError]);
 
   const handleRestart = () => {
     resetQuestionnaire();
   };
 
   const handleNewQuestionnaire = () => {
-    restartQuestionnaire();
+    restartQuestionnaire().catch(err => setError(err instanceof Error ? err.message : 'Errore durante la creazione del questionario'));
+  };
+
+  const handleRetryEmail = async () => {
+    if (!result?.submissionId) return;
+    setIsRetryingEmail(true);
+    try {
+      const response = await fetch(`/api/submissions/${result.submissionId}/complete`, { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Impossibile inviare l'email");
+      setResult(current => current ? { ...current, emailStatus: data.emailStatus } : current);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossibile inviare l'email");
+    } finally {
+      setIsRetryingEmail(false);
+    }
   };
 
   if (isLoading) {
@@ -108,7 +127,7 @@ export const Results: React.FC = () => {
     );
   }
 
-  if (!profileId && !resultToken) {
+  if (!submissionId && !resultToken) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-6 py-5 rounded-lg">
         <p className="text-center text-lg font-medium">Profilo mancante</p>
@@ -144,6 +163,14 @@ export const Results: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {!resultToken && result.submissionStatus === 'completed' && result.emailStatus === 'failed' && (
+        <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+          <p>Il risultato è pronto, ma l'email non è stata inviata.</p>
+          <Button onClick={handleRetryEmail} disabled={isRetryingEmail} variant="outline">
+            {isRetryingEmail ? 'Invio in corso...' : 'Riprova invio email'}
+          </Button>
+        </div>
+      )}
       <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-5 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -7,7 +7,7 @@ import { Field, FieldLabel, FieldContent } from '@/components/ui/field';
 import { Sparkles, UserCircle2 } from 'lucide-react';
 
 interface ProfileFormProps {
-  onProfileCreated: (profileId: string, questionnaireCompleted?: boolean) => void;
+  onProfileCreated: (profileId: string) => Promise<void>;
   defaultMode?: 'signup' | 'signin';
 }
 
@@ -61,10 +61,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ onProfileCreated, defa
         throw new Error(data.error || "Errore durante l'accesso");
       }
 
-      onProfileCreated(
-        data.profileId,
-        data.questionnaireCompleted || false
-      );
+      await onProfileCreated(data.profileId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore sconosciuto');
     } finally {
@@ -89,7 +86,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ onProfileCreated, defa
             </h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">
               {authMode === 'signin'
-                ? 'Accedi con la tua email per riprendere il questionario.'
+                ? 'Accedi con la tua email per iniziare un nuovo questionario.'
                 : 'Inserisci i tuoi dati per iniziare il questionario.'}
             </p>
           </div>

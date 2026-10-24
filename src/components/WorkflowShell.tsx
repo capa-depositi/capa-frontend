@@ -12,7 +12,7 @@ interface WorkflowShellProps {
   onStart?: () => void;
   onStepChange?: (n: number) => void;
   onRequestAuth?: (mode: 'signup' | 'signin') => void;
-  onSubmitProfile?: (data: { nome: string; cognome: string; email: string; eta: number }) => Promise<string>;
+  onSubmitProfile?: (data: { nome: string; cognome: string; email: string; eta: number }) => Promise<void>;
   children: ReactNode;
 }
 
