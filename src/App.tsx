@@ -157,7 +157,10 @@ function App() {
 
   // Push a new history entry whenever appState changes due to navigation
   useEffect(() => {
-    const token = appState === 'results' ? new URLSearchParams(window.location.search).get('token') : null;
+    const currentToken = new URLSearchParams(window.location.search).get('token');
+    // Initial mount from an email link: appState is still 'intro' until the mount effect applies 'results'; keep the token in the URL
+    if (currentToken && appState !== 'results') return;
+    const token = appState === 'results' ? currentToken : null;
     const query = new URLSearchParams({ step: appState });
     if (token) query.set('token', token);
     window.history.pushState({ appState }, '', `?${query.toString()}`);
