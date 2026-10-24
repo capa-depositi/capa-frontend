@@ -2,6 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { BadgeCheck, CircleDollarSign, RotateCcw } from 'lucide-react';
 import { useQuestionnaire } from '../contexts/QuestionnaireContext';
 import { Button } from '@/components/ui/button';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
+
+interface YearlyInterest {
+  year: number;
+  rate: number;
+  days: number;
+  interest: number;
+}
+
+const chartConfig = {
+  interest: { label: 'Interessi', color: '#b92b22' },
+} satisfies ChartConfig;
 
 interface CalculationResult {
   submissionId: string;
@@ -14,6 +27,7 @@ interface CalculationResult {
   months?: number;
   depositDate?: string;
   message?: string;
+  yearlyBreakdown?: YearlyInterest[];
 }
 
 export const Results: React.FC = () => {
@@ -244,6 +258,46 @@ export const Results: React.FC = () => {
                   <span className="ml-2 font-medium text-slate-900">{result.depositDate}</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {result.yearlyBreakdown && result.yearlyBreakdown.length > 0 && (
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6">
+              <p className="mb-1 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Interessi per anno</p>
+              <p className="mb-4 text-sm text-slate-500">
+                Interessi semplici maturati in ciascun anno. Il primo e l'ultimo anno possono essere parziali.
+              </p>
+              <ChartContainer config={chartConfig} className="h-64 w-full">
+                <BarChart
+                  accessibilityLayer
+                  data={result.yearlyBreakdown.map((row) => ({
+                    ...row,
+                    label: String(row.year),
+                  }))}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
+                  <YAxis tickLine={false} axisLine={false} width={56} tickFormatter={(v: number) => `€${v}`} />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value, _name, item) => {
+                          const row = item.payload as YearlyInterest;
+                          return (
+                            <div className="grid gap-0.5">
+                              <span className="font-medium">€{Number(value).toFixed(2)}</span>
+                              <span className="text-muted-foreground">
+                                tasso {row.rate}% · {row.days} giorni
+                              </span>
+                            </div>
+                          );
+                        }}
+                      />
+                    }
+                  />
+                  <Bar dataKey="interest" fill="var(--color-interest)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
             </div>
           )}
 
