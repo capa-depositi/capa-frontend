@@ -44,7 +44,7 @@ export const ProfileStep: React.FC<ProfileStepProps> = ({ onRequestAuth, onSubmi
   return (
     <div className="mb-8 flex w-full items-center justify-center">
       <div className="relative">
-        <img src="/biglietto.jpg" alt="Biglietto" className="block mx-auto w-80 max-w-full object-contain rounded-lg shadow-lg" />
+        <img src="/biglietto.png" alt="Biglietto" className="block mx-auto w-80 max-w-full object-contain rounded-lg shadow-lg" />
 
         <div className="mt-3 flex justify-center gap-3 relative z-30 pointer-events-auto">
           <Button type="button" variant="outline" onClick={() => onRequestAuth && onRequestAuth('signin')}>Accedi</Button>

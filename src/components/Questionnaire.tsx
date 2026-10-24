@@ -357,9 +357,9 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
           <div style={{ margin: '8px' }}>
             <Card className="overflow-hidden" style={{ boxShadow: '0 22px 44px rgba(22,14,8,0.32)' }}>
               <img
-                src="/biglietto.jpg"
+                src="/biglietto.png"
                 alt="Biglietto"
-                style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover', display: 'block' }}
+                style={{ width: '100%', height: 'auto', display: 'block' }}
               />
               <form onSubmit={ticketForm.handleSubmit(onSubmitTicket)}>
                 <CardContent>
@@ -492,19 +492,20 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ onSubmitProfile })
         {!showTicket && (
           <>
             <Button
-              variant="ghost"
+              variant="default"
               onClick={handlePrevious}
               disabled={currentQuestionIndex === 0}
-              className="rounded-full text-slate-600"
+              className="rounded-full"
             >
               <ChevronLeft size={16} className="mr-1" />
               Precedente
             </Button>
 
             <Button
+              variant="outline"
               onClick={handleNext}
               disabled={!canProceed || isAdvancing}
-              className="h-10 rounded-full px-6 text-base shadow-md"
+              className="rounded-full"
             >
               {isAdvancing ? 'Salvataggio...' : willCompleteOnNext ? 'Completa Questionario' : 'Avanti'}
               <ArrowRight size={16} className="ml-2" />
