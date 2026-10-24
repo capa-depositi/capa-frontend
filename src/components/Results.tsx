@@ -13,7 +13,7 @@ interface YearlyInterest {
 }
 
 const chartConfig = {
-  interest: { label: 'Interessi', color: '#b92b22' },
+  interest: { label: 'Interessi', color: '#2563eb' },
 } satisfies ChartConfig;
 
 interface CalculationResult {
@@ -279,14 +279,16 @@ export const Results: React.FC = () => {
                   <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
                   <YAxis tickLine={false} axisLine={false} width={56} tickFormatter={(v: number) => `€${v}`} />
                   <ChartTooltip
+                    cursor={false}
                     content={
                       <ChartTooltipContent
+                        className="border-slate-200 bg-white text-black shadow-md"
                         formatter={(value, _name, item) => {
                           const row = item.payload as YearlyInterest;
                           return (
-                            <div className="grid gap-0.5">
+                            <div className="grid gap-0.5 text-black">
                               <span className="font-medium">€{Number(value).toFixed(2)}</span>
-                              <span className="text-muted-foreground">
+                              <span>
                                 tasso {row.rate}% · {row.days} giorni
                               </span>
                             </div>
