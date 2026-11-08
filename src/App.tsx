@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { QuestionnaireProvider } from './contexts/QuestionnaireContext';
 import { AppProvider } from './contexts/AppContext';
 import { ProfileForm } from './components/ProfileForm';
@@ -8,6 +8,12 @@ import { WorkflowShell } from './components/WorkflowShell';
 
 type AppState = 'intro' | 'profile' | 'questionnaire' | 'results';
 
+declare global {
+  interface Window {
+    gtag?: (command: string, ...args: unknown[]) => void;
+  }
+}
+
 function App() {
   const [appState, setAppState] = useState<AppState>('intro');
   const [profileId, setProfileId] = useState<string | null>(null);
@@ -16,6 +22,7 @@ function App() {
   const [userRole, setUserRole] = useState<'affittuario' | null>(null);
   const [showProfileForm, setShowProfileForm] = useState<boolean>(false);
   const [defaultAuthMode, setDefaultAuthMode] = useState<'signup' | 'signin'>('signup');
+  const trackedSubmissionIds = useRef(new Set<string>());
 
   const createSubmission = async (id: string) => {
     const response = await fetch('/api/submissions', {
@@ -89,6 +96,15 @@ function App() {
     const completionResponse = await fetch(`/api/submissions/${activeSubmissionId}/complete`, { method: 'POST' });
     const completion = await completionResponse.json();
     if (!completionResponse.ok) throw new Error(completion.error || 'Errore durante il completamento');
+    if (completion.completed && !trackedSubmissionIds.current.has(activeSubmissionId) && window.gtag) {
+      trackedSubmissionIds.current.add(activeSubmissionId);
+      window.gtag('event', 'conversion', {
+        send_to: 'AW-18554529265/2_sbCIzMyrIdEPHLvo9F',
+        value: 1.0,
+        currency: 'EUR',
+        transaction_id: activeSubmissionId
+      });
+    }
     setAppState('results');
   };
 
