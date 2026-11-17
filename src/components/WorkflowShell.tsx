@@ -33,7 +33,7 @@ export const WorkflowShell: React.FC<WorkflowShellProps> = ({
   const isIntro = currentStep === 1;
   const useBlueBackground = currentStep === 1 || currentStep === 2 || currentStep === 3;
 
-  const containerClass = 'w-full min-h-screen py-4 text-white sm:py-6';
+  const containerClass = 'flex min-h-screen w-full flex-col py-4 text-white sm:py-6';
 
   useEffect(() => {
     if (useBlueBackground) {
@@ -55,7 +55,7 @@ export const WorkflowShell: React.FC<WorkflowShellProps> = ({
 
   return (
     <div className={containerClass}>
-      <div className="mx-auto flex max-w-6xl flex-col px-2 sm:px-4 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-2 sm:px-4 lg:px-8">
         {/* Tabs always visible at the top */}
           <div className="w-full">
             <SegmentedIndicator
@@ -86,6 +86,15 @@ export const WorkflowShell: React.FC<WorkflowShellProps> = ({
           </>
         )}
       </div>
+      <footer className="mx-auto w-full max-w-6xl px-2 pt-6 text-center text-sm text-white/80 sm:px-4 lg:px-8">
+        Per info e contatti -{' '}
+        <a
+          href="mailto:capa.depositi@gmail.com"
+          className="underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          capa.depositi@gmail.com
+        </a>
+      </footer>
     </div>
   );
 };
