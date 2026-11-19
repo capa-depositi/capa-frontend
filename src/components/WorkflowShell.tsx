@@ -94,6 +94,13 @@ export const WorkflowShell: React.FC<WorkflowShellProps> = ({
         >
           capa.depositi@gmail.com
         </a>
+        {' · '}
+        <a
+          href="/privacy-policy.html"
+          className="underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          Informativa sulla Privacy
+        </a>
       </footer>
     </div>
   );
