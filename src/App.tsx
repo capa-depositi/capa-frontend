@@ -32,6 +32,7 @@ function App() {
   const [showProfileForm, setShowProfileForm] = useState<boolean>(false);
   const [defaultAuthMode, setDefaultAuthMode] = useState<'signup' | 'signin'>('signup');
   const trackedSubmissionIds = useRef(new Set<string>());
+  const previousAppState = useRef(appState);
 
   const createSubmission = async (id: string) => {
     const response = await fetch('/api/submissions', {
@@ -162,9 +163,6 @@ function App() {
         // Ensure history reflects the requested step and do not overwrite it with the default
         window.history.replaceState({ appState: step }, '', getAppUrl(step as typeof appState));
       }
-    } else {
-      // Ensure history has an initial state we can rely on
-      window.history.replaceState({ appState }, '', getAppUrl(appState));
     }
 
     const onPop = (ev: PopStateEvent) => {
@@ -182,8 +180,10 @@ function App() {
 
   // Push a new history entry whenever appState changes due to navigation
   useEffect(() => {
+    if (previousAppState.current === appState) return;
+    previousAppState.current = appState;
+
     const currentToken = new URLSearchParams(window.location.search).get('token');
-    // Initial mount from an email link: appState is still 'intro' until the mount effect applies 'results'; keep the token in the URL
     if (currentToken && appState !== 'results') return;
     window.history.pushState({ appState }, '', getAppUrl(appState));
   }, [appState]);
