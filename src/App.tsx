@@ -8,6 +8,15 @@ import { WorkflowShell } from './components/WorkflowShell';
 
 type AppState = 'intro' | 'profile' | 'questionnaire' | 'results';
 
+function getAppUrl(appState: AppState) {
+  const params = new URLSearchParams(window.location.search);
+  params.set('step', appState);
+  if (appState !== 'results') params.delete('token');
+
+  const query = params.toString();
+  return `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+}
+
 declare global {
   interface Window {
     gtag?: (command: string, ...args: unknown[]) => void;
@@ -113,20 +122,20 @@ function App() {
     setProfileId(null);
     setSubmissionId(null);
     setUserRole(null);
-    window.history.replaceState({ appState: 'intro' }, '', '?step=intro');
+    window.history.replaceState({ appState: 'intro' }, '', getAppUrl('intro'));
   };
 
   const handleRestartQuestionnaire = async () => {
     setSubmissionId(null);
     setQuestionnaireKey(current => current + 1);
-    window.history.replaceState({ appState: 'questionnaire' }, '', '?step=questionnaire');
+    window.history.replaceState({ appState: 'questionnaire' }, '', getAppUrl('questionnaire'));
     setAppState('questionnaire');
   };
 
   const handleStartQuestionnaire = () => {
     setSubmissionId(null);
     setQuestionnaireKey(current => current + 1);
-    window.history.replaceState({ appState: 'questionnaire' }, '', '?step=questionnaire');
+    window.history.replaceState({ appState: 'questionnaire' }, '', getAppUrl('questionnaire'));
     setAppState('questionnaire');
     setShowProfileForm(false);
   };
@@ -145,17 +154,17 @@ function App() {
     if (resultToken) {
       // Email "vedi il tuo risultato" link: always land on results, regardless of session state
       setAppState('results');
-      window.history.replaceState({ appState: 'results' }, '', `?step=results&token=${resultToken}`);
+      window.history.replaceState({ appState: 'results' }, '', getAppUrl('results'));
     } else if (step) {
       // map known values
       if (step === 'intro' || step === 'profile' || step === 'questionnaire' || step === 'results') {
         setAppState(step as typeof appState);
         // Ensure history reflects the requested step and do not overwrite it with the default
-        window.history.replaceState({ appState: step }, '', `?step=${step}`);
+        window.history.replaceState({ appState: step }, '', getAppUrl(step as typeof appState));
       }
     } else {
       // Ensure history has an initial state we can rely on
-      window.history.replaceState({ appState }, '', `?step=${appState}`);
+      window.history.replaceState({ appState }, '', getAppUrl(appState));
     }
 
     const onPop = (ev: PopStateEvent) => {
@@ -176,10 +185,7 @@ function App() {
     const currentToken = new URLSearchParams(window.location.search).get('token');
     // Initial mount from an email link: appState is still 'intro' until the mount effect applies 'results'; keep the token in the URL
     if (currentToken && appState !== 'results') return;
-    const token = appState === 'results' ? currentToken : null;
-    const query = new URLSearchParams({ step: appState });
-    if (token) query.set('token', token);
-    window.history.pushState({ appState }, '', `?${query.toString()}`);
+    window.history.pushState({ appState }, '', getAppUrl(appState));
   }, [appState]);
 
 
