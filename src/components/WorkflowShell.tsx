@@ -1,6 +1,7 @@
 import React, { ReactNode, useEffect } from 'react';
 // WorkflowShell renders step components; inputs/buttons/arrows live inside those components
 import SegmentedIndicator from './ui/segmented-indicator';
+import { CookiePreferencesButton } from './CookiePreferencesButton';
 import Intro from './steps/Intro';
 import ProfileStep from './steps/ProfileStep';
 import QuestionnaireStep from './steps/QuestionnaireStep';
@@ -101,6 +102,8 @@ export const WorkflowShell: React.FC<WorkflowShellProps> = ({
         >
           Informativa sulla Privacy
         </a>
+        {' · '}
+        <CookiePreferencesButton className="underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" />
       </footer>
     </div>
   );

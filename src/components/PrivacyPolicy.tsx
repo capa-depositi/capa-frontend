@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
+import { CookiePreferencesButton } from './CookiePreferencesButton';
 
 export default function PrivacyPolicy() {
   return (
@@ -7,7 +8,7 @@ export default function PrivacyPolicy() {
         <CardContent className="p-5 leading-relaxed sm:p-8 [&_a]:break-words [&_a]:underline [&_a]:underline-offset-2 [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2 [&_a:focus-visible]:outline-offset-2 [&_h2]:mb-2 [&_h2]:mt-9 [&_h2]:border-t [&_h2]:border-slate-300 [&_h2]:pt-5 [&_h2]:text-xl [&_h2]:font-semibold [&_li]:mb-2 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
   <p><a href="/">Torna alla home</a></p>
   <h1 className="mb-1 font-serif text-3xl font-semibold leading-tight sm:text-4xl">Informativa sulla Privacy</h1>
-  <p className="!mb-8 text-sm text-slate-600">Ultimo aggiornamento: 19 novembre 2026</p>
+  <p className="!mb-8 text-sm text-slate-600">Ultimo aggiornamento: 24 novembre 2026</p>
 
   <p>La presente informativa descrive come vengono trattati i dati personali degli utenti che visitano il sito capadepositi.com (il «Sito») e utilizzano il questionario per la stima degli interessi sul deposito cauzionale, ai sensi del Regolamento (UE) 2016/679 («GDPR») e del D.Lgs. 196/2003 («Codice Privacy»).</p>
 
@@ -42,6 +43,7 @@ export default function PrivacyPolicy() {
   <ul>
     <li>Vercel Inc., per l’hosting del Sito;</li>
     <li>Resend, per l’invio delle email;</li>
+    <li>Cookiebot by Usercentrics, per la gestione del banner e delle preferenze cookie;</li>
     <li>Google Ireland Limited, per i servizi Google Ads, solo previo consenso.</li>
   </ul>
   <p>I docenti e i valutatori del progetto accademico possono ricevere esclusivamente dati aggregati e anonimi, mai dati identificativi.</p>
@@ -51,7 +53,7 @@ export default function PrivacyPolicy() {
   <p>Alcuni fornitori possono trattare dati negli Stati Uniti. In tali casi il trasferimento avviene sulla base dell’adesione del fornitore all’EU-U.S. Data Privacy Framework o delle Clausole Contrattuali Standard approvate dalla Commissione Europea (art. 46 GDPR).</p>
 
   <h2>7. Cookie e Google Ads</h2>
-  <p>Il Sito utilizza cookie tecnici, che non richiedono consenso. Previo consenso espresso tramite il banner dei cookie, il Sito utilizza anche il tag di Google Ads, che può installare cookie per misurare l’efficacia delle campagne pubblicitarie. L’utente può modificare o revocare il consenso in qualsiasi momento tramite il link «Preferenze cookie» presente in fondo a ogni pagina.</p>
+  <p>Il Sito utilizza cookie tecnici, che non richiedono consenso. Cookiebot by Usercentrics gestisce il banner e memorizza le preferenze espresse dall’utente. Previo consenso espresso, il Sito utilizza anche il tag di Google Ads, che può installare cookie per misurare l’efficacia delle campagne pubblicitarie. L’utente può modificare o revocare il consenso in qualsiasi momento tramite il link «Preferenze cookie» presente in fondo a ogni pagina.</p>
   <p>Per informazioni su come Google utilizza i dati: <a href="https://policies.google.com/technologies/partner-sites" rel="noopener noreferrer" target="_blank">policies.google.com/technologies/partner-sites</a>. L’utente può gestire la personalizzazione degli annunci su <a href="https://adssettings.google.com" rel="noopener noreferrer" target="_blank">adssettings.google.com</a>.</p>
 
   <h2>8. Periodo di conservazione</h2>
@@ -73,6 +75,9 @@ export default function PrivacyPolicy() {
   <p>I Contitolari possono aggiornare la presente informativa. La versione aggiornata sarà pubblicata su questa pagina con la relativa data.</p>
         </CardContent>
       </Card>
+      <footer className="mx-auto mt-6 text-center text-sm text-white/80">
+        <CookiePreferencesButton className="underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" />
+      </footer>
     </main>
   );
 }
