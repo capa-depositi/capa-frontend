@@ -54,6 +54,7 @@ export default function PrivacyPolicy() {
 
   <h2>7. Cookie e Google Ads</h2>
   <p>Il Sito utilizza cookie tecnici, che non richiedono consenso. Cookiebot by Usercentrics gestisce il banner e memorizza le preferenze espresse dall’utente. Previo consenso espresso, il Sito utilizza anche il tag di Google Ads, che può installare cookie per misurare l’efficacia delle campagne pubblicitarie. L’utente può modificare o revocare il consenso in qualsiasi momento tramite il link «Preferenze cookie» presente in fondo a ogni pagina.</p>
+  <p>Il rifiuto o la revoca del consenso ai cookie non necessari non impedisce l’uso del questionario: i dati forniti vengono trattati per erogare il servizio richiesto e i dati tecnici essenziali possono essere trattati per garantire sicurezza e funzionamento. Se il consenso pubblicitario è negato, Google Ads non può usare i relativi cookie o identificatori. In base alla modalità di Consent Mode configurata, Google può comunque ricevere ping di misurazione senza cookie e con segnali tecnici limitati; nella modalità di base, invece, i tag Google restano bloccati fino al consenso.</p>
   <p>Per informazioni su come Google utilizza i dati: <a href="https://policies.google.com/technologies/partner-sites" rel="noopener noreferrer" target="_blank">policies.google.com/technologies/partner-sites</a>. L’utente può gestire la personalizzazione degli annunci su <a href="https://adssettings.google.com" rel="noopener noreferrer" target="_blank">adssettings.google.com</a>.</p>
 
   <h2>8. Periodo di conservazione</h2>
